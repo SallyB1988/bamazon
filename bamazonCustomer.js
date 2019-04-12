@@ -56,6 +56,8 @@ const checkInventory = (inventory, buy) => {
     console.log('Sorry - Not enough of that item in stock');
   } else {
     console.log(`${buy.quantity} ${selected.product_name}(s) have been purchased.`);
+    let newQuantity = selected.stock_quantity - buy.quantity;
+    updateQuantity(buy.purchaseId, newQuantity);
   }
   connection.end();
 }
@@ -70,3 +72,23 @@ const getItem = (arr, id) => {
   console.log('ERROR');
   return null;
 }
+
+
+const updateQuantity = (id, quantity) => {
+  console.log('quantity: ', quantity);
+  console.log('id: ', id);
+
+  connection.query("UPDATE products SET ? WHERE ?",
+  [
+    {
+      stock_quantity: quantity
+    },
+    {
+        item_id : id
+    },
+  ]),function(error) {
+    if (error) throw err;
+    console.log("Item purchased successfully!");
+    // start();
+  }
+  }
