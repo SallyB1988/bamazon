@@ -42,6 +42,7 @@ function makeSelection() {
       createMenuList();
       break;
     case "Add new product":
+      addNewProduct();
       break;
     case "Exit":
       connection.end();
@@ -94,7 +95,6 @@ function restockInventory(items, idsObj) {
 
 function createMenuList() {
   let items = [];
-  // let ids = [];
   let idsObj = {};
   const query = "SELECT product_name AS name, stock_quantity AS num, item_id AS id FROM products";
   connection.query(query,
@@ -103,9 +103,7 @@ function createMenuList() {
       for (let i = 0; i < resp.length; i++) {
         items.push(`${resp[i].name} (${resp[i].num})`)
         idsObj[resp[i].name] = resp[i].id;
-        // ids.push(obj);
       }
-      console.log(idsObj);
       restockInventory(items, idsObj);
     }
   )
@@ -115,10 +113,53 @@ const updateRecord = (id, num) => {
   console.log(`....Update id ${id} by ${num}`);
   const query =
    `UPDATE products SET stock_quantity = (stock_quantity+${num}) WHERE item_id = ${id}`;
-  console.log(query);
   connection.query(query), function(err) {
     if (err) throw err;
     console.log('Record updated...');
   }
   makeSelection();
+}
+
+function addNewProduct() {
+  inquirer.prompt([
+    {
+      type: "input",
+      name: "name",
+      message: "Enter product name:"
+    },
+    {
+      type: "input",
+      name: "department",
+      message: "Enter department name:"
+    },
+    {
+      type: "input",
+      name: "price",
+      message: "Enter product price:"
+    },
+    {
+      type: "input",
+      name: "quantity",
+      message: "Enter quantity in stock:"
+    }
+  ])
+  .then(function(ans) {
+    let fieldsStr = '( product_name, department_name, price, stock_quantity )';
+    let productStr = `( '${ans.name}', '${ans.department}', ${ans.price}, ${ans.quantity})`;
+
+
+    // let query = `INSERT INTO products ? VALUES ?`;
+    let query = `INSERT INTO products ${fieldsStr} VALUES ${productStr}`;
+    console.log(query);
+    connection.query(query,
+      function(err) {
+        if (err) throw err;
+        console.log("New product added...");
+        makeSelection();
+    })
+
+  })
+
+  // makeSelection();
+
 }
