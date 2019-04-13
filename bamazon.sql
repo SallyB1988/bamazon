@@ -12,4 +12,10 @@ CREATE TABLE products (
   PRIMARY KEY (item_id)
 );
 
+SELECT * FROM products;
 
+UPDATE products SET stock_quantity = stock_quantity + 10  WHERE product_name="KitchenAid Mixer";
+
+SELECT * FROM products WHERE stock_quantity <= 5;
+
+SELECT product_name AS name, stock_quantity AS num FROM products;
