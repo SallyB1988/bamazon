@@ -15,22 +15,23 @@ var connection = mysql.createConnection({
 connection.connect(function(err) {
   if (err) throw err;
   // run the start function after the connection is made to prompt the user
-  showInventory();
+  getOrder();
 });
 
-function showInventory() {
+function getOrder() {
   console.log('\n\n************************** BAMAZON INVENTORY ******************************\n');
   connection.query(
     "SELECT * FROM products", function(err, resp) {
       if (err) throw err;
       console.log(columnify(resp));   // NICE! Displays data in columns
-      start(resp);
+      console.log("\n");
+      orderItem(resp);
     }
   )
 }
 
 // function which prompts the user for what action they should take
-function start(data) {
+function orderItem(data) {
   inquirer
   .prompt([
     {
@@ -47,21 +48,42 @@ function start(data) {
   ])
   .then(function(ans) {
     checkInventory(data, ans);
+    askOrderMore();
   });
 }
 
 const checkInventory = (inventory, buy) => {
   let selected = getItem(inventory, buy.purchaseId);
-  if (selected.stock_quantity < buy.quantity) {
+  if (selected === -1) {  // item_ID not found
+    return;
+  } else if (selected.stock_quantity < buy.quantity) {
     console.log('Sorry - Not enough of that item in stock');
+    return;
   } else {
-    console.log(`${buy.quantity} ${selected.product_name}(s) have been purchased.`);
+    let cost = buy.quantity*selected.price;
+    console.log(`\n${buy.quantity} ${selected.product_name}(s) have been purchased.   COST: $${cost.toFixed(2)}\n`);
     let newQuantity = selected.stock_quantity - buy.quantity;
     updateQuantity(buy.purchaseId, newQuantity);
   }
-  connection.end();
 }
 
+function askOrderMore() {
+  inquirer.prompt([
+    {
+      type: "confirm",
+      name: "confirm",
+      message: "Order another item?",
+      default: true
+    },
+  ])
+  .then(function(resp) {
+    if (resp.confirm) {
+      getOrder();
+    } else {
+      connection.end();
+    }
+  });
+}
 
 const getItem = (arr, id) => {
   for (let i = 0; i < arr.length; i++) {
@@ -69,15 +91,12 @@ const getItem = (arr, id) => {
       return arr[i];
     }
   }
-  console.log('ERROR');
-  return null;
+  console.log(`ERROR: ITEM_ID: ${id} not found`);
+  return -1;    // item not found
 }
 
 
 const updateQuantity = (id, quantity) => {
-  console.log('quantity: ', quantity);
-  console.log('id: ', id);
-
   connection.query("UPDATE products SET ? WHERE ?",
   [
     {
@@ -87,8 +106,8 @@ const updateQuantity = (id, quantity) => {
         item_id : id
     },
   ]),function(error) {
-    if (error) throw err;
-    console.log("Item purchased successfully!");
-    // start();
-  }
+      if (error) throw error;
+      console.log("Item purchased successfully!");
+      askOrderMore();
+    }
   }
