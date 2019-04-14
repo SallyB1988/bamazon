@@ -15,8 +15,8 @@ connection.connect(function(err) {
   makeSelection();
 })
 
+// Displays main menu
 function makeSelection() {
-
   inquirer.prompt([
     {
       type: "list",
@@ -25,8 +25,8 @@ function makeSelection() {
         "View products for sale",
         "View low inventory",
         "Add to inventory",
-      "Add new product",
-      "Exit"
+        "Add new product",
+        "Exit"
     ]
   }
 ])
@@ -49,9 +49,9 @@ function makeSelection() {
       break;
   }
 })
-
 }
 
+// DB query to get all products, then displays them
 function showInventory() {
   let query = "SELECT * FROM products";
   connection.query(query, 
@@ -62,6 +62,7 @@ function showInventory() {
   })
 }
 
+// DB query to get all products with <= 5 items in stock
 function showLowInventory() {
   let query = "SELECT * FROM products WHERE stock_quantity <= 5";
   connection.query(query,
@@ -72,8 +73,9 @@ function showLowInventory() {
     })
 }
 
+// Creates a list of all items, then asks user which one to increase the inventory of.
+// Gets number of items to add to the current inventory
 function restockInventory(items, idsObj) {
-
   inquirer.prompt([
     {
       type: "list",
@@ -109,6 +111,7 @@ function createMenuList() {
   )
 }
 
+// Adds 'num' to the stock_quantity field for the record with item_id = 'id'
 const updateRecord = (id, num) => {
   console.log(`....Update id ${id} by ${num}`);
   const query =
@@ -120,6 +123,7 @@ const updateRecord = (id, num) => {
   makeSelection();
 }
 
+// Asks user for new name, department, price, and quantity of new product to add to the DB.
 function addNewProduct() {
   inquirer.prompt([
     {
@@ -135,22 +139,19 @@ function addNewProduct() {
     {
       type: "input",
       name: "price",
-      message: "Enter product price:"
+      message: "Enter product price:",
     },
     {
       type: "input",
       name: "quantity",
-      message: "Enter quantity in stock:"
+      message: "Enter quantity in stock:",
     }
   ])
   .then(function(ans) {
     let fieldsStr = '( product_name, department_name, price, stock_quantity )';
     let productStr = `( '${ans.name}', '${ans.department}', ${ans.price}, ${ans.quantity})`;
 
-
-    // let query = `INSERT INTO products ? VALUES ?`;
     let query = `INSERT INTO products ${fieldsStr} VALUES ${productStr}`;
-    console.log(query);
     connection.query(query,
       function(err) {
         if (err) throw err;
@@ -159,7 +160,4 @@ function addNewProduct() {
     })
 
   })
-
-  // makeSelection();
-
 }
