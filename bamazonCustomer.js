@@ -14,7 +14,6 @@ var connection = mysql.createConnection({
 // connect to the mysql server and sql database
 connection.connect(function(err) {
   if (err) throw err;
-  // run the start function after the connection is made to prompt the user
   getOrder();
 });
 
@@ -23,14 +22,14 @@ function getOrder() {
   connection.query(
     "SELECT * FROM products", function(err, resp) {
       if (err) throw err;
-      console.log(columnify(resp));   // NICE! Displays data in columns
+      console.log(columnify(resp));
       console.log("\n");
       orderItem(resp);
     }
   )
 }
 
-// function which prompts the user for what action they should take
+// function which prompts the user for which item they would like to buy
 function orderItem(data) {
   inquirer
   .prompt([
@@ -52,6 +51,7 @@ function orderItem(data) {
   });
 }
 
+// check if there are enough items in the inventory
 const checkInventory = (inventory, buy) => {
   let selected = getItem(inventory, buy.purchaseId);
   if (selected === -1) {  // item_ID not found
@@ -60,13 +60,14 @@ const checkInventory = (inventory, buy) => {
     console.log('Sorry - Not enough of that item in stock');
     return;
   } else {
-    let cost = buy.quantity*selected.price;
-    console.log(`\n${buy.quantity} ${selected.product_name}(s) have been purchased.   COST: $${cost.toFixed(2)}\n`);
+    let saleAmount = buy.quantity*selected.price;
+    console.log(`\n${buy.quantity} ${selected.product_name}(s) have been purchased.   COST: $${saleAmount.toFixed(2)}\n`);
     let newQuantity = selected.stock_quantity - buy.quantity;
-    updateQuantity(buy.purchaseId, newQuantity);
+    updateQuantity(buy.purchaseId, newQuantity, saleAmount);
   }
 }
 
+// Ask user if they want to order any other items
 function askOrderMore() {
   inquirer.prompt([
     {
@@ -85,6 +86,7 @@ function askOrderMore() {
   });
 }
 
+// Return just the item information that matches the specified id value
 const getItem = (arr, id) => {
   for (let i = 0; i < arr.length; i++) {
     if (parseInt(arr[i].item_id) === parseInt(id)) {
@@ -95,17 +97,11 @@ const getItem = (arr, id) => {
   return -1;    // item not found
 }
 
-
-const updateQuantity = (id, quantity) => {
-  connection.query("UPDATE products SET ? WHERE ?",
-  [
-    {
-      stock_quantity: quantity
-    },
-    {
-        item_id : id
-    },
-  ]),function(error) {
+// update the number of items for a given id
+const updateQuantity = (id, quantity, saleAmount) => {
+  let setDef = `stock_quantity = ${quantity}, product_sales = product_sales + ${saleAmount}`;
+  let whereDef = `item_id = ${id}`;
+  connection.query(`UPDATE products SET ${setDef} WHERE ${whereDef}`),function(error) {
       if (error) throw error;
       console.log("Item purchased successfully!");
       askOrderMore();
