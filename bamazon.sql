@@ -44,3 +44,17 @@ SELECT departments.department_id,
 RIGHT JOIN departments
 ON products.department_name = departments.department_name
 WHERE products.department_name = "linens";
+
+
+-- Get total sale for all departments
+SELECT departments.department_id,
+ departments.department_name,
+ departments.overhead_costs,
+ SUM(products.product_sales) AS product_sales,
+ (SUM(products.product_sales) - departments.overhead_costs) AS total_profit FROM products
+RIGHT JOIN departments
+ON products.department_name = departments.department_name
+GROUP BY products.department_name;
+
+-- Insert a new deparment
+INSERT INTO departments (department_name, overhead_costs) VALUES ('furniture', 600);
