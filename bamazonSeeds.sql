@@ -12,7 +12,7 @@ VALUES ('KitchenAid Mixer', 'appliances', 259.99, 50),
        ('Ralph Breaks the Internet', 'dvd', 19.94, 50);
 
 INSERT INTO departments (department_name, overhead_costs)   
-VALUES ('appliances', 80000),
-       ('food', 50000),
-       ('linens', 10000),
-       ('dvd', 10000);
+VALUES ('appliances', 80),
+       ('food', 50),
+       ('linens', 10),
+       ('dvd', 10);
