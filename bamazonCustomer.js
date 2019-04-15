@@ -20,7 +20,7 @@ connection.connect(function(err) {
 function getOrder() {
   console.log('\n\n************************** BAMAZON INVENTORY ******************************\n');
   connection.query(
-    "SELECT * FROM products", function(err, resp) {
+    "SELECT item_id, product_name, price FROM products", function(err, resp) {
       if (err) throw err;
       console.log(columnify(resp));
       console.log("\n");
@@ -46,25 +46,32 @@ function orderItem(data) {
     }
   ])
   .then(function(ans) {
-    checkInventory(data, ans);
-    askOrderMore();
+    checkInventory(ans);
   });
 }
 
 // check if there are enough items in the inventory
-const checkInventory = (inventory, buy) => {
-  let selected = getItem(inventory, buy.purchaseId);
-  if (selected === -1) {  // item_ID not found
-    return;
-  } else if (selected.stock_quantity < buy.quantity) {
-    console.log('Sorry - Not enough of that item in stock');
-    return;
-  } else {
-    let saleAmount = buy.quantity*selected.price;
-    console.log(`\n${buy.quantity} ${selected.product_name}(s) have been purchased.   COST: $${saleAmount.toFixed(2)}\n`);
-    let newQuantity = selected.stock_quantity - buy.quantity;
-    updateQuantity(buy.purchaseId, newQuantity, saleAmount);
-  }
+const checkInventory = (item) => {
+  connection.query(
+    `SELECT * FROM products WHERE item_id = ${parseInt(item.purchaseId)}`,
+     function(err, resp) {
+      if (err) throw err;
+
+      let selected = resp[0];
+      if (selected === undefined) {
+        console.log('Invalid ID \n');
+        askOrderMore();
+      } else if (selected.stock_quantity < item.quantity) {
+        console.log('Sorry - Not enough of that item in stock\n');
+        askOrderMore();
+      } else {
+        let saleAmount = item.quantity*selected.price;
+        console.log(`\n${item.quantity} ${selected.product_name}(s) have been purchased.   COST: $${saleAmount.toFixed(2)}\n`);
+        let newQuantity = selected.stock_quantity - item.quantity;
+        updateQuantity(item.purchaseId, newQuantity, saleAmount);
+      }
+    }
+  )
 }
 
 // Ask user if they want to order any other items
@@ -86,24 +93,13 @@ function askOrderMore() {
   });
 }
 
-// Return just the item information that matches the specified id value
-const getItem = (arr, id) => {
-  for (let i = 0; i < arr.length; i++) {
-    if (parseInt(arr[i].item_id) === parseInt(id)) {
-      return arr[i];
-    }
-  }
-  console.log(`ERROR: ITEM_ID: ${id} not found`);
-  return -1;    // item not found
-}
-
 // update the number of items for a given id
 const updateQuantity = (id, quantity, saleAmount) => {
   let setDef = `stock_quantity = ${quantity}, product_sales = product_sales + ${saleAmount}`;
   let whereDef = `item_id = ${id}`;
-  connection.query(`UPDATE products SET ${setDef} WHERE ${whereDef}`),function(error) {
-      if (error) throw error;
-      console.log("Item purchased successfully!");
-      askOrderMore();
-    }
-  }
+  connection.query(`UPDATE products SET ${setDef} WHERE ${whereDef}`, function(error) {
+    if (error) throw error;
+    console.log("Item purchased successfully!");
+    askOrderMore();
+  })
+}
